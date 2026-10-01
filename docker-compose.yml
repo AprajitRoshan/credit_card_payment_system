@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: credit_card_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: credit_card_payment_db
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  django:
+    build:
+      context: ./backend/django_backend
+    container_name: credit_card_django
+    restart: unless-stopped
+    environment:
+      DB_NAME: credit_card_payment_db
+      DB_USER: root
+      DB_PASSWORD: 123456
+      DB_HOST: mysql
+      DB_PORT: 3306
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  fastapi:
+    build:
+      context: ./backend/fastapi_backend
+    container_name: credit_card_fastapi
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://root:123456@mysql:3306/credit_card_payment_db
+    ports:
+      - "8001:8001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: credit_card_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - django
+      - fastapi
+
+volumes:
+  mysql_data:

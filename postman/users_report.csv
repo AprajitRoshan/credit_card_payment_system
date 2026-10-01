@@ -1,0 +1,4 @@
+User ID,Name,Email,Role,Is Active,Created At
+3,Test Customer,testcustomer@example.com,CUSTOMER,TRUE,42:09.5
+2,Aprajit Roshan,,CUSTOMER,TRUE,19:21.6
+1,Aprajit Roshan,aprajit.roshan@gmail.com,ADMIN,TRUE,16:15.2
