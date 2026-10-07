@@ -21,6 +21,12 @@ class Card(models.Model):
 
     card_holder_name = models.CharField(max_length=100)
 
+    credit_limit = models.DecimalField(
+    max_digits=12,
+    decimal_places=2,
+    default=50000,
+)
+
     masked_card_number = models.CharField(max_length=19)
 
     last_four_digits = models.CharField(max_length=4)

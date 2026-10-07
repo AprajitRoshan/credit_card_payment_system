@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import payments
+from app.routes import payments, dashboard
 
 app = FastAPI(
     title="Credit Card Payment System - Payment API"
@@ -22,4 +22,9 @@ app.include_router(
     payments.router,
     prefix="/api/payments",
     tags=["Payments"],
+)
+
+app.include_router(
+    dashboard.router,
+    prefix="/api",
 )

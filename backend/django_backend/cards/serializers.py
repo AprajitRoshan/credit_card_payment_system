@@ -19,10 +19,11 @@ class CardSerializer(serializers.ModelSerializer):
             "card_number",
             "masked_card_number",
             "last_four_digits",
+            "credit_limit",
             "expiry_month",
             "expiry_year",
             "created_at",
-        ]
+]
 
         read_only_fields = [
             "id",
