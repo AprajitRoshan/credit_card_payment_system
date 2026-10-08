@@ -23,6 +23,7 @@ class CardSerializer(serializers.ModelSerializer):
             "expiry_month",
             "expiry_year",
             "created_at",
+            "is_blocked",
 ]
 
         read_only_fields = [
@@ -30,6 +31,7 @@ class CardSerializer(serializers.ModelSerializer):
             "masked_card_number",
             "last_four_digits",
             "created_at",
+            "is_blocked",
         ]
 
     def validate_card_number(self, value):

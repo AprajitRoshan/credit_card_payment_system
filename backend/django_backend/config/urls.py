@@ -17,5 +17,7 @@ urlpatterns = [
     path("api/transactions/", include("transactions.urls")),
     path("api/admin-panel/", include("admin_panel.urls")),
     path("api/admin/", include("admin_panel.urls")),
+    path("api/notifications/", include("notifications.urls"),),
+    path("api/statements/",include("statements.urls"),),
     
 ]

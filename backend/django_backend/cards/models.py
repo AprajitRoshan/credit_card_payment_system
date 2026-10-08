@@ -22,10 +22,14 @@ class Card(models.Model):
     card_holder_name = models.CharField(max_length=100)
 
     credit_limit = models.DecimalField(
-    max_digits=12,
-    decimal_places=2,
-    default=50000,
-)
+        max_digits=12,
+        decimal_places=2,
+        default=50000,
+    )
+
+    is_blocked = models.BooleanField(
+        default=False,
+    )
 
     masked_card_number = models.CharField(max_length=19)
 
