@@ -24,10 +24,7 @@ def validate_internal_request(request):
         settings.INTERNAL_NOTIFICATION_SECRET
     )
 
-    if not expected_secret:
-        return False
-
-    if not provided_secret:
+    if not expected_secret or not provided_secret:
         return False
 
     return secrets.compare_digest(
@@ -39,56 +36,37 @@ def validate_internal_request(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def send_transaction_alert(request):
-
     if not validate_internal_request(request):
         return Response(
-            {
-                "detail": "Forbidden."
-            },
+            {"detail": "Forbidden."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
     user_id = request.data.get("user_id")
     amount = request.data.get("amount")
 
-    if not user_id or not amount:
+    if user_id is None or amount is None:
         return Response(
-            {
-                "detail": (
-                    "user_id and amount are required."
-                )
-            },
+            {"detail": "user_id and amount are required."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     try:
         user = User.objects.get(id=user_id)
-
+        amount = float(amount)
     except User.DoesNotExist:
         return Response(
-            {
-                "detail": "User not found."
-            },
+            {"detail": "User not found."},
             status=status.HTTP_404_NOT_FOUND,
         )
-
-    try:
-        amount = float(amount)
-
     except (TypeError, ValueError):
         return Response(
-            {
-                "detail": "amount must be a valid number."
-            },
+            {"detail": "amount must be a valid number."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     if amount <= 5000:
-        return Response(
-            {
-                "sent": False
-            }
-        )
+        return Response({"sent": False})
 
     sent = send_notification_email(
         recipient_email=user.email,
@@ -100,37 +78,26 @@ def send_transaction_alert(request):
         ),
     )
 
-    return Response(
-        {
-            "sent": sent
-        }
-    )
+    return Response({"sent": sent})
 
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def send_credit_limit_alert(request):
-
     if not validate_internal_request(request):
         return Response(
-            {
-                "detail": "Forbidden."
-            },
+            {"detail": "Forbidden."},
             status=status.HTTP_403_FORBIDDEN,
         )
 
     user_id = request.data.get("user_id")
-
     available_credit = request.data.get(
         "available_credit"
     )
-
-    credit_limit = request.data.get(
-        "credit_limit"
-    )
+    credit_limit = request.data.get("credit_limit")
 
     if (
-        not user_id
+        user_id is None
         or available_credit is None
         or credit_limit is None
     ):
@@ -146,40 +113,23 @@ def send_credit_limit_alert(request):
 
     try:
         user = User.objects.get(id=user_id)
-
     except User.DoesNotExist:
         return Response(
-            {
-                "detail": "User not found."
-            },
+            {"detail": "User not found."},
             status=status.HTTP_404_NOT_FOUND,
         )
 
     try:
-        available_credit = float(
-            available_credit
-        )
-
-        credit_limit = float(
-            credit_limit
-        )
-
+        available_credit = float(available_credit)
+        credit_limit = float(credit_limit)
     except (TypeError, ValueError):
         return Response(
-            {
-                "detail": (
-                    "Credit values must be numbers."
-                )
-            },
+            {"detail": "Credit values must be numbers."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     if credit_limit <= 0:
-        return Response(
-            {
-                "sent": False
-            }
-        )
+        return Response({"sent": False})
 
     available_percentage = (
         available_credit / credit_limit
@@ -202,10 +152,8 @@ def send_credit_limit_alert(request):
         message=(
             "Your available credit has fallen "
             "below 10% of your total credit limit.\n\n"
-            f"Credit Limit: "
-            f"₹{credit_limit:,.2f}\n"
-            f"Available Credit: "
-            f"₹{available_credit:,.2f}\n"
+            f"Credit Limit: ₹{credit_limit:,.2f}\n"
+            f"Available Credit: ₹{available_credit:,.2f}\n"
             f"Available Credit Percentage: "
             f"{available_percentage:.2f}%"
         ),
@@ -220,3 +168,64 @@ def send_credit_limit_alert(request):
             ),
         }
     )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def send_fraud_alert(request):
+    if not validate_internal_request(request):
+        return Response(
+            {"detail": "Forbidden."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    user_id = request.data.get("user_id")
+    amount = request.data.get("amount")
+    reason = request.data.get("reason")
+
+    if (
+        user_id is None
+        or amount is None
+        or not isinstance(reason, str)
+        or not reason.strip()
+    ):
+        return Response(
+            {
+                "detail": (
+                    "user_id, amount and reason "
+                    "are required."
+                )
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {"detail": "User not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        amount = float(amount)
+        if amount < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": "amount must be a valid non-negative number."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    sent = send_notification_email(
+        recipient_email=user.email,
+        subject="Suspicious Payment Alert",
+        message=(
+            f"A payment of ₹{amount:,.2f} was flagged "
+            "by the fraud detection system.\n\n"
+            f"Reason: {reason.strip()}\n\n"
+            "Please review your account activity."
+        ),
+    )
+
+    return Response({"sent": sent})

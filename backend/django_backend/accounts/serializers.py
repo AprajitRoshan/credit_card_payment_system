@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import Role, User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -15,6 +15,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data["email"],
         )
         user.set_password(validated_data["password"])
+
+        # New sign-ups are customers; staff roles are assigned by an admin.
+        user.role = Role.objects.filter(name=Role.CUSTOMER).first()
+
         user.save()
 
         return user

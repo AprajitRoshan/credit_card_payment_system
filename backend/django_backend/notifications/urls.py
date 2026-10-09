@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     send_transaction_alert,
     send_credit_limit_alert,
+    send_fraud_alert,
 )
 
 urlpatterns = [
@@ -15,5 +16,10 @@ urlpatterns = [
         "credit-limit-alert/",
         send_credit_limit_alert,
         name="credit-limit-alert",
+    ),
+    path(
+        "fraud-alert/",
+        send_fraud_alert,
+        name="fraud-alert",
     ),
 ]

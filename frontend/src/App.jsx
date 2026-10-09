@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   Navigate,
   Route,
@@ -11,10 +12,13 @@ import Cards from "./pages/Cards";
 import AddCard from "./pages/AddCard";
 import Payment from "./pages/Payment";
 import Transactions from "./pages/Transactions";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminCards from "./pages/AdminCards";
 
 import ThemeToggle from "./components/ThemeToggle";
+
+// Chart-heavy pages are loaded on demand to keep the initial bundle small.
+const Analytics = lazy(() => import("./pages/Analytics"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 
 function App() {
@@ -22,6 +26,11 @@ function App() {
     <>
       <ThemeToggle />
 
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-[#f5f7fb] dark:bg-[#080f1d]" />
+        }
+      >
       <Routes>
         <Route
           path="/login"
@@ -59,6 +68,11 @@ function App() {
         />
 
         <Route
+          path="/analytics"
+          element={<Analytics />}
+        />
+
+        <Route
           path="/admin"
           element={<AdminDashboard />}
         />
@@ -78,6 +92,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </>
   );
 }

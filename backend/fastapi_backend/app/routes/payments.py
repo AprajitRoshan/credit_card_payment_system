@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.services.payment_service import (
+    PaymentError,
     create_payment,
     process_payment,
 )
@@ -24,11 +25,17 @@ def make_payment(
     payment_data: PaymentCreate,
     db: Session = Depends(get_db),
 ):
-    return create_payment(
-        db=db,
-        payment_data=payment_data,
-        user_id=user_id,
-    )
+    try:
+        return create_payment(
+            db=db,
+            payment_data=payment_data,
+            user_id=user_id,
+        )
+    except PaymentError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.detail,
+        )
 
 
 @router.post(
@@ -44,8 +51,8 @@ def process_payment_api(
             db=db,
             payment_id=payment_id,
         )
-    except ValueError as exc:
+    except PaymentError as exc:
         raise HTTPException(
-            status_code=404,
-            detail=str(exc),
+            status_code=exc.status_code,
+            detail=exc.detail,
         )

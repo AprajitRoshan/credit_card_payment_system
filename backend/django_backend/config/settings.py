@@ -28,7 +28,11 @@ SECRET_KEY = 'django-insecure-un%4e97bvuj%_)@mizf@^e9x6rlpbwar(%o3_s-u6!l$q#0v@z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# "django" is the service name used by FastAPI inside Docker Compose.
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,[::1],django",
+).split(",")
 
 
 # Application definition
@@ -53,8 +57,13 @@ INSTALLED_APPS = [
     "admin_panel",
     "notifications",
     "statements",
-    ]
+    "fraud",
+    "monitoring",
+]
 MIDDLEWARE = [
+    # Must stay first so it measures the full request/response cycle.
+    "monitoring.middleware.ApiMonitoringMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -62,7 +71,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -88,16 +96,26 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+# DB_ENGINE=sqlite can be used for quick local test runs without MySQL.
+if os.getenv("DB_ENGINE", "mysql").lower() == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.getenv("SQLITE_PATH", str(BASE_DIR / "db.sqlite3")),
+            "OPTIONS": {"timeout": 20},
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("DB_NAME"),
+            "USER": os.getenv("DB_USER"),
+            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "HOST": os.getenv("DB_HOST"),
+            "PORT": os.getenv("DB_PORT"),
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -142,7 +160,13 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# Override with EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# (or filebased + EMAIL_FILE_PATH) for local testing without sending mail.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_FILE_PATH = os.getenv("EMAIL_FILE_PATH", str(BASE_DIR / "sent_emails"))
 EMAIL_HOST = os.getenv("SMTP_HOST")
 EMAIL_PORT = int(os.getenv("SMTP_PORT", "587"))
 EMAIL_USE_TLS = True
@@ -172,6 +196,75 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+# Lets the frontend read download filenames and timing headers.
+CORS_EXPOSE_HEADERS = [
+    "Content-Disposition",
+    "X-Response-Time-ms",
+]
+
 INTERNAL_NOTIFICATION_SECRET = os.getenv(
     "INTERNAL_NOTIFICATION_SECRET"
 )
+
+
+# ---------------------------------------------------------------------
+# SERVICE URLS
+# ---------------------------------------------------------------------
+
+FASTAPI_HEALTH_URL = os.getenv(
+    "FASTAPI_HEALTH_URL",
+    "http://127.0.0.1:8001/health",
+)
+
+
+# ---------------------------------------------------------------------
+# MONITORING
+# ---------------------------------------------------------------------
+
+# Requests slower than this are logged as warnings.
+SLOW_REQUEST_THRESHOLD_MS = int(
+    os.getenv("SLOW_REQUEST_THRESHOLD_MS", "1000")
+)
+
+# Paths excluded from request logging (health checks polled frequently).
+MONITORING_EXCLUDED_PATHS = [
+    "/api/health/",
+]
+
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+        "api_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "api.log"),
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 3,
+            "formatter": "standard",
+        },
+    },
+    "loggers": {
+        "monitoring": {
+            "handlers": ["console", "api_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "fraud": {
+            "handlers": ["console", "api_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
 
@@ -13,9 +14,22 @@ class Payment(Base):
 
     amount = Column(Float, nullable=False)
     currency = Column(String(3), default="INR", nullable=False)
-
     status = Column(String(20), default="PENDING", nullable=False)
 
+    category = Column(
+        String(20),
+        default="OTHER",
+        server_default="OTHER",
+        nullable=False,
+    )
+
+    # Used by the fraud rules (different device / location)
+    device_id = Column(String(100), nullable=True)
+    location_id = Column(String(100), nullable=True)
+
+    # Timestamps are written in UTC from Python so that the fraud
+    # time-window comparison does not depend on the MySQL server
+    # timezone.
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

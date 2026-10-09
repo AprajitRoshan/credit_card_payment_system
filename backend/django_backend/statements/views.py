@@ -13,8 +13,6 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
     Paragraph,
     SimpleDocTemplate,
@@ -25,6 +23,8 @@ from reportlab.platypus import (
 
 from cards.models import Card
 from transactions.models import Transaction
+
+from .pdf_fonts import register_pdf_fonts
 
 
 User = get_user_model()
@@ -166,28 +166,10 @@ class MonthlyStatementView(APIView):
         )
 
         # ---------------------------------------------------------
-        # REGISTER ARIAL FONTS
+        # FONTS (cross-platform, see statements/pdf_fonts.py)
         # ---------------------------------------------------------
 
-        pdfmetrics.registerFont(
-            TTFont(
-                "Arial",
-                r"C:\Windows\Fonts\arial.ttf",
-            )
-        )
-
-        pdfmetrics.registerFont(
-            TTFont(
-                "Arial-Bold",
-                r"C:\Windows\Fonts\arialbd.ttf",
-            )
-        )
-
-        # ---------------------------------------------------------
-        # RUPEE SYMBOL
-        # ---------------------------------------------------------
-
-        RUPEE_SYMBOL = chr(0x20B9)
+        regular_font, bold_font, RUPEE_SYMBOL = register_pdf_fonts()
 
         def rupee(amount):
             return f"{RUPEE_SYMBOL}{amount:,.2f}"
@@ -201,7 +183,7 @@ class MonthlyStatementView(APIView):
         title_style = ParagraphStyle(
             "StatementTitle",
             parent=styles["Title"],
-            fontName="Arial-Bold",
+            fontName=bold_font,
             fontSize=20,
             leading=24,
             alignment=TA_LEFT,
@@ -211,7 +193,7 @@ class MonthlyStatementView(APIView):
         subtitle_style = ParagraphStyle(
             "StatementSubtitle",
             parent=styles["Normal"],
-            fontName="Arial",
+            fontName=regular_font,
             fontSize=9,
             textColor=colors.HexColor("#64748b"),
             spaceAfter=12,
@@ -220,7 +202,7 @@ class MonthlyStatementView(APIView):
         section_style = ParagraphStyle(
             "SectionTitle",
             parent=styles["Heading2"],
-            fontName="Arial-Bold",
+            fontName=bold_font,
             fontSize=11,
             textColor=colors.HexColor("#0f172a"),
             spaceBefore=10,
@@ -230,7 +212,7 @@ class MonthlyStatementView(APIView):
         normal_style = ParagraphStyle(
             "NormalStatement",
             parent=styles["Normal"],
-            fontName="Arial",
+            fontName=regular_font,
             fontSize=9,
             leading=13,
             textColor=colors.HexColor("#334155"),

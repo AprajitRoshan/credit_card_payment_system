@@ -1,0 +1,31 @@
+Analytics Summary,October 2026
+
+Summary
+Metric,Value
+Monthly Spending (INR),19000.0
+Successful Transactions,5
+Failed Transactions,4
+Pending Transactions,0
+Flagged Transactions,3
+Total Credit Limit (INR),125000.0
+Total Credit Used (INR),19500.0
+Credit Utilization (%),15.6
+
+Category Expenses
+Category,Amount (INR),Transactions
+OTHER,15000.0,4
+FOOD,4000.0,1
+
+Monthly Trend
+Month,Spending (INR),Transactions
+May 2026,0.0,0
+Jun 2026,0.0,0
+Jul 2026,0.0,0
+Aug 2026,0.0,0
+Sep 2026,1500.0,5
+Oct 2026,19000.0,9
+
+Card Utilization
+Card,Credit Limit (INR),Used (INR),Available (INR),Utilization (%)
+************1111,50000.0,11500.0,38500.0,23.0
+************4282,75000.0,8000.0,67000.0,10.67

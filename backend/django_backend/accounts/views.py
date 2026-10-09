@@ -21,6 +21,11 @@ class MeView(APIView):
             "username": request.user.username,
             "email": request.user.email,
             "is_staff": request.user.is_staff,
+            "role": (
+                request.user.role.name
+                if request.user.role
+                else None
+            ),
         })
 
 

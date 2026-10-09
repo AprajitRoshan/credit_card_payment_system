@@ -5,7 +5,11 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
 
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import (
+    IsAdminRole,
+    CanViewAdminData,
+    CanManageCards,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,7 +24,7 @@ User = get_user_model()
 
 
 class AdminDashboardView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [CanViewAdminData]
 
     def get(self, request):
         today = date.today()
@@ -95,7 +99,7 @@ class AdminDashboardView(APIView):
 
 
 class AdminTransactionExportView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get(self, request):
         transactions = (
@@ -152,7 +156,7 @@ class AdminTransactionExportView(APIView):
 
 
 class AdminCardManagementView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [CanManageCards]
 
     def get(self, request):
         """
@@ -272,6 +276,8 @@ class AdminCardManagementView(APIView):
             )
 
         was_blocked = card.is_blocked
+        old_credit_limit = str(card.credit_limit)
+        old_is_blocked = card.is_blocked
 
         # ---------------------------------------------
         # BLOCK / UNBLOCK
@@ -372,6 +378,13 @@ class AdminCardManagementView(APIView):
             admin_user=request.user,
             action=action,
             target=f"Card {card.id}",
+            details={
+                "old_is_blocked": old_is_blocked,
+                "new_is_blocked": card.is_blocked,
+                "old_credit_limit": old_credit_limit,
+                "new_credit_limit": str(card.credit_limit),
+            },
+            ip_address=request.META.get("REMOTE_ADDR"),
         )
 
         return Response(

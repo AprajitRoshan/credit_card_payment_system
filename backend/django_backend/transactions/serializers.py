@@ -13,9 +13,12 @@ class TransactionSerializer(serializers.ModelSerializer):
             "amount",
             "currency",
             "status",
+            "category",
+            "fraud_status",
             "created_at",
         ]
         read_only_fields = [
             "id",
+            "fraud_status",
             "created_at",
         ]

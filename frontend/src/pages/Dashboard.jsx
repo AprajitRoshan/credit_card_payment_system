@@ -4,6 +4,9 @@ import api from "../services/api";
 
 const dashboardApi = "http://127.0.0.1:8001/api";
 
+// Roles that can open the admin dashboard (see accounts/permissions.py)
+const ADMIN_ROLES = ["ADMIN", "SUPPORT", "READ_ONLY"];
+
 /* =========================================================
    HELPERS
 ========================================================= */
@@ -842,7 +845,7 @@ export default function Dashboard() {
                         </p>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                         {/* Manage Cards */}
 
                         <Link
@@ -1083,6 +1086,67 @@ export default function Dashboard() {
                             </div>
 
                             <span className="ml-auto text-slate-300 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-amber-500 dark:text-slate-600">
+                                <ArrowRightIcon />
+                            </span>
+                        </Link>
+
+                        {/* Analytics */}
+
+                        <Link
+                            to="/analytics"
+                            className="
+                                dashboard-action
+                                group
+                                flex
+                                items-center
+                                gap-4
+                                rounded-2xl
+                                border
+                                border-slate-200
+                                bg-white
+                                p-5
+                                shadow-sm
+                                transition-all
+                                duration-300
+                                hover:-translate-y-1
+                                hover:border-cyan-200
+                                hover:shadow-lg
+                                dark:border-slate-700/60
+                                dark:bg-[#111827]
+                                dark:hover:border-cyan-500/30
+                            "
+                        >
+                            <div
+                                className="
+                                    flex
+                                    h-12
+                                    w-12
+                                    shrink-0
+                                    items-center
+                                    justify-center
+                                    rounded-xl
+                                    bg-cyan-500/10
+                                    text-cyan-600
+                                    transition-transform
+                                    duration-300
+                                    group-hover:scale-105
+                                    dark:text-cyan-400
+                                "
+                            >
+                                <ChartIcon size={21} />
+                            </div>
+
+                            <div className="min-w-0">
+                                <p className="font-bold text-slate-900 dark:text-white">
+                                    Analytics
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Charts &amp; exports
+                                </p>
+                            </div>
+
+                            <span className="ml-auto text-slate-300 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-cyan-500 dark:text-slate-600">
                                 <ArrowRightIcon />
                             </span>
                         </Link>
@@ -1523,7 +1587,8 @@ export default function Dashboard() {
                     ADMIN
                 ================================================= */}
 
-                {user?.is_staff && (
+                {(user?.is_staff ||
+                    ADMIN_ROLES.includes(user?.role)) && (
                     <div className="mt-7">
                         <Link
                             to="/admin"

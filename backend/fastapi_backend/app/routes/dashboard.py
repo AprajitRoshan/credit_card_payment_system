@@ -41,7 +41,21 @@ def dashboard_summary(
     ).scalar() or 0
 
     # Current month spending
-    now = datetime.now(timezone.utc)
+    # Date-range comparison (instead of YEAR()/MONTH()) keeps the
+    # query index-friendly and database-agnostic.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    month_start = now.replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
+
+    if month_start.month == 12:
+        next_month_start = month_start.replace(
+            year=month_start.year + 1, month=1
+        )
+    else:
+        next_month_start = month_start.replace(
+            month=month_start.month + 1
+        )
 
     current_month_spending = db.execute(
         text("""
@@ -49,13 +63,13 @@ def dashboard_summary(
             FROM transactions_transaction
             WHERE user_id = :user_id
               AND status = 'SUCCESS'
-              AND YEAR(created_at) = :year
-              AND MONTH(created_at) = :month
+              AND created_at >= :month_start
+              AND created_at < :next_month_start
         """),
         {
             "user_id": user_id,
-            "year": now.year,
-            "month": now.month,
+            "month_start": month_start,
+            "next_month_start": next_month_start,
         },
     ).scalar() or 0
 

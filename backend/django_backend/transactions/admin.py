@@ -13,7 +13,9 @@ class TransactionAdmin(admin.ModelAdmin):
         "amount",
         "currency",
         "status",
+        "category",
+        "fraud_status",
         "created_at",
     )
     search_fields = ("payment_id", "user__username")
-    list_filter = ("status", "currency", "created_at")
+    list_filter = ("status", "fraud_status", "category", "created_at")

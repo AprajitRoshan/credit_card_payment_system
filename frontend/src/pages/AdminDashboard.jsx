@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { downloadFile } from "../services/download";
+import SystemHealthPanel from "../components/admin/SystemHealthPanel";
+import FraudLogPanel from "../components/admin/FraudLogPanel";
 
 /* =========================================================
    ICONS
@@ -82,6 +85,9 @@ export default function AdminDashboard() {
     const [dashboard, setDashboard] =
         useState(null);
 
+    const [role, setRole] =
+        useState(null);
+
     const [loading, setLoading] =
         useState(true);
 
@@ -107,10 +113,15 @@ export default function AdminDashboard() {
             try {
                 setError("");
 
-                const response =
-                    await api.get(
-                        "/admin/dashboard/"
-                    );
+                const [meResponse, response] =
+                    await Promise.all([
+                        api.get("/auth/me/"),
+                        api.get(
+                            "/admin/dashboard/"
+                        ),
+                    ]);
+
+                setRole(meResponse.data.role);
 
                 setDashboard(
                     response.data
@@ -148,6 +159,11 @@ export default function AdminDashboard() {
         loadDashboard();
     }, [navigate]);
 
+    const isAdmin = role === "ADMIN";
+
+    const canReviewFraud =
+        role === "ADMIN" || role === "SUPPORT";
+
     /* =====================================================
        EXPORT
     ===================================================== */
@@ -156,46 +172,9 @@ export default function AdminDashboard() {
         try {
             setError("");
 
-            const response =
-                await api.get(
-                    "/admin/transactions/export/",
-                    {
-                        responseType: "blob",
-                    }
-                );
-
-            const url =
-                window.URL.createObjectURL(
-                    new Blob(
-                        [response.data],
-                        {
-                            type: "text/csv",
-                        }
-                    )
-                );
-
-            const link =
-                document.createElement(
-                    "a"
-                );
-
-            link.href = url;
-
-            link.setAttribute(
-                "download",
+            await downloadFile(
+                "/admin/transactions/export/",
                 "transactions.csv"
-            );
-
-            document.body.appendChild(
-                link
-            );
-
-            link.click();
-
-            link.remove();
-
-            window.URL.revokeObjectURL(
-                url
             );
         } catch (err) {
             console.error(
@@ -283,12 +262,14 @@ export default function AdminDashboard() {
 
                         <p className="text-xs text-slate-400">
                             Administration
+                            {role && ` · ${role.replace("_", "-")}`}
                         </p>
                     </div>
 
                     <Link
                         to="/dashboard"
                         className="
+                            mr-14
                             rounded-xl
                             px-4
                             py-2
@@ -332,8 +313,8 @@ export default function AdminDashboard() {
 
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400 sm:text-base">
                         Monitor users, cards,
-                        transactions and payment
-                        activity.
+                        transactions, fraud alerts
+                        and system health.
                     </p>
                 </div>
 
@@ -516,6 +497,7 @@ export default function AdminDashboard() {
                                     </div>
                                 </Link>
 
+                                {isAdmin && (
                                 <button
                                     type="button"
                                     onClick={
@@ -559,8 +541,23 @@ export default function AdminDashboard() {
                                         </p>
                                     </div>
                                 </button>
+                                )}
                             </div>
                         </div>
+
+                        {/* =====================================
+                            SYSTEM HEALTH
+                        ===================================== */}
+
+                        <SystemHealthPanel />
+
+                        {/* =====================================
+                            FRAUD DETECTION
+                        ===================================== */}
+
+                        <FraudLogPanel
+                            canReview={canReviewFraud}
+                        />
 
                         {/* =====================================
                             DAILY SUMMARY

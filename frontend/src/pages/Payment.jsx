@@ -4,11 +4,68 @@ import api from "../services/api";
 
 const paymentApi = "http://127.0.0.1:8001/api";
 
+const CATEGORIES = [
+    "SHOPPING",
+    "FOOD",
+    "TRAVEL",
+    "BILLS",
+    "ENTERTAINMENT",
+    "OTHER",
+];
+
+/* =========================================================
+   FRAUD SIGNALS
+
+   A random device id is kept per browser, and the browser
+   time zone is used as a coarse location. The FastAPI fraud
+   service flags rapid payments from different devices or
+   locations.
+========================================================= */
+
+function getDeviceId() {
+    try {
+        let deviceId = localStorage.getItem("device_id");
+
+        if (!deviceId) {
+            deviceId =
+                window.crypto?.randomUUID?.() ||
+                `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+            localStorage.setItem("device_id", deviceId);
+        }
+
+        return deviceId;
+    } catch {
+        return null;
+    }
+}
+
+function getLocationId() {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch {
+        return null;
+    }
+}
+
+function errorDetail(data, fallback) {
+    if (!data) return fallback;
+
+    if (typeof data.detail === "string") return data.detail;
+
+    if (Array.isArray(data.detail) && data.detail[0]?.msg) {
+        return data.detail[0].msg;
+    }
+
+    return fallback;
+}
+
 export default function Payment() {
     const [user, setUser] = useState(null);
     const [cards, setCards] = useState([]);
     const [cardId, setCardId] = useState("");
     const [amount, setAmount] = useState("");
+    const [category, setCategory] = useState("OTHER");
     const [payment, setPayment] = useState(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -25,8 +82,12 @@ export default function Payment() {
                 const cardsResponse = await api.get("/cards/");
                 setCards(cardsResponse.data);
 
-                if (cardsResponse.data.length > 0) {
-                    setCardId(String(cardsResponse.data[0].id));
+                const usableCard = cardsResponse.data.find(
+                    (card) => !card.is_blocked
+                );
+
+                if (usableCard) {
+                    setCardId(String(usableCard.id));
                 }
             } catch (err) {
                 console.error(err);
@@ -70,6 +131,9 @@ export default function Payment() {
                         card_id: Number(cardId),
                         amount: Number(amount),
                         currency: "INR",
+                        category,
+                        device_id: getDeviceId(),
+                        location_id: getLocationId(),
                     }),
                 }
             );
@@ -78,9 +142,7 @@ export default function Payment() {
 
             if (!response.ok) {
                 throw new Error(
-                    typeof data === "object"
-                        ? JSON.stringify(data)
-                        : "Payment creation failed."
+                    errorDetail(data, "Payment creation failed.")
                 );
             }
 
@@ -111,9 +173,7 @@ export default function Payment() {
 
             if (!response.ok) {
                 throw new Error(
-                    typeof data === "object"
-                        ? JSON.stringify(data)
-                        : "Payment processing failed."
+                    errorDetail(data, "Payment processing failed.")
                 );
             }
 
@@ -321,9 +381,11 @@ export default function Payment() {
                                                 <option
                                                     key={card.id}
                                                     value={card.id}
+                                                    disabled={card.is_blocked}
                                                 >
                                                     {card.card_type} - ****{" "}
                                                     {card.last_four_digits}
+                                                    {card.is_blocked ? " (blocked)" : ""}
                                                 </option>
                                             ))}
                                         </select>
@@ -352,6 +414,27 @@ export default function Payment() {
                                                 className="w-full rounded-xl border border-slate-300 py-4 pl-10 pr-4 text-lg font-semibold outline-none transition placeholder:text-base placeholder:font-normal focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                            Category
+                                        </label>
+
+                                        <select
+                                            value={category}
+                                            onChange={(e) =>
+                                                setCategory(e.target.value)
+                                            }
+                                            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3.5 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                                        >
+                                            {CATEGORIES.map((item) => (
+                                                <option key={item} value={item}>
+                                                    {item.charAt(0) +
+                                                        item.slice(1).toLowerCase()}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <div className="rounded-xl bg-slate-50 p-4">
@@ -464,6 +547,20 @@ export default function Payment() {
                                         </span>
                                     </div>
                                 </div>
+
+                                {payment.fraud_status === "FLAGGED" && (
+                                    <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                        <p className="font-semibold">
+                                            ! This payment was flagged for review
+                                        </p>
+
+                                        <p className="mt-1 text-amber-700">
+                                            Our fraud checks noticed unusual
+                                            activity. A security alert has
+                                            been emailed to you.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {payment.status === "PENDING" && (
                                     <button

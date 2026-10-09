@@ -4,9 +4,78 @@ info:
   version: 1.0.0
   description: API documentation for the Credit Card Payment System
 paths:
+  /api/admin-panel/cards/:
+    get:
+      operationId: admin_panel_cards_retrieve
+      description: Return all cards for administrator card management.
+      tags:
+      - admin-panel
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: admin_panel_cards_partial_update
+      description: Block/unblock a card and/or update credit limit.
+      tags:
+      - admin-panel
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin-panel/cards/{card_id}/:
+    get:
+      operationId: admin_panel_cards_retrieve_2
+      description: Return all cards for administrator card management.
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-panel
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: admin_panel_cards_partial_update_2
+      description: Block/unblock a card and/or update credit limit.
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin-panel
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/admin-panel/dashboard/:
     get:
       operationId: admin_panel_dashboard_retrieve
+      tags:
+      - admin-panel
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin-panel/system-health/:
+    get:
+      operationId: admin_panel_system_health_retrieve
+      description: |-
+        GET /api/admin/system-health/?hours=24
+
+        Detailed health and API metrics for the admin dashboard.
+        Available to Admin, Support and Read-Only roles.
       tags:
       - admin-panel
       security:
@@ -24,9 +93,78 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/admin/cards/:
+    get:
+      operationId: admin_cards_retrieve
+      description: Return all cards for administrator card management.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: admin_cards_partial_update
+      description: Block/unblock a card and/or update credit limit.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin/cards/{card_id}/:
+    get:
+      operationId: admin_cards_retrieve_2
+      description: Return all cards for administrator card management.
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: admin_cards_partial_update_2
+      description: Block/unblock a card and/or update credit limit.
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/admin/dashboard/:
     get:
       operationId: admin_dashboard_retrieve
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/admin/system-health/:
+    get:
+      operationId: admin_system_health_retrieve
+      description: |-
+        GET /api/admin/system-health/?hours=24
+
+        Detailed health and API metrics for the admin dashboard.
+        Available to Admin, Support and Read-Only roles.
       tags:
       - admin
       security:
@@ -202,6 +340,107 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/fraud/logs/:
+    get:
+      operationId: fraud_logs_list
+      description: |-
+        GET /api/fraud/logs/
+
+        Admin, Support and Read-Only roles can review fraud logs.
+
+        Filters: review_status, rule, user_id, start_date, end_date
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - fraud
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFraudLogList'
+          description: ''
+  /api/fraud/logs/{log_id}/review/:
+    patch:
+      operationId: fraud_logs_review_partial_update
+      description: |-
+        PATCH /api/fraud/logs/<id>/review/
+
+        Admin and Support roles can mark a fraud log as reviewed.
+      parameters:
+      - in: path
+        name: log_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - fraud
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        GET /api/health/
+
+        Public liveness check used by Docker / uptime monitors.
+        Returns 503 when the database is unreachable.
+      tags:
+      - health
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/credit-limit-alert/:
+    post:
+      operationId: notifications_credit_limit_alert_create
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/fraud-alert/:
+    post:
+      operationId: notifications_fraud_alert_create
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/transaction-alert/:
+    post:
+      operationId: notifications_transaction_alert_create
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -347,9 +586,38 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/statements/monthly/:
+    get:
+      operationId: statements_monthly_retrieve
+      tags:
+      - statements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/transactions/:
     get:
       operationId: transactions_list
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
       tags:
       - transactions
       security:
@@ -359,10 +627,38 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Transaction'
+                $ref: '#/components/schemas/PaginatedTransactionList'
           description: ''
+  /api/transactions/analytics/:
+    get:
+      operationId: transactions_analytics_retrieve
+      description: GET /api/transactions/analytics/?month=10&year=2026
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/transactions/analytics/export/{file_format}/:
+    get:
+      operationId: transactions_analytics_export_retrieve
+      description: |-
+        GET /api/transactions/analytics/export/csv/?month=10&year=2026
+        GET /api/transactions/analytics/export/pdf/?month=10&year=2026
+      parameters:
+      - in: path
+        name: file_format
+        schema:
+          type: string
+        required: true
+      tags:
+      - transactions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
 components:
   schemas:
     Card:
@@ -387,17 +683,26 @@ components:
         last_four_digits:
           type: string
           readOnly: true
+        credit_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
         expiry_month:
           type: integer
-          maximum: 65535
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         expiry_year:
           type: integer
-          maximum: 65535
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         created_at:
           type: string
           format: date-time
+          readOnly: true
+        is_blocked:
+          type: boolean
           readOnly: true
       required:
       - card_holder_name
@@ -407,6 +712,7 @@ components:
       - expiry_month
       - expiry_year
       - id
+      - is_blocked
       - last_four_digits
       - masked_card_number
     CardTypeEnum:
@@ -417,6 +723,155 @@ components:
       description: |-
         * `CREDIT` - Credit Card
         * `DEBIT` - Debit Card
+    CategoryEnum:
+      enum:
+      - SHOPPING
+      - FOOD
+      - TRAVEL
+      - BILLS
+      - ENTERTAINMENT
+      - OTHER
+      type: string
+      description: |-
+        * `SHOPPING` - Shopping
+        * `FOOD` - Food
+        * `TRAVEL` - Travel
+        * `BILLS` - Bills
+        * `ENTERTAINMENT` - Entertainment
+        * `OTHER` - Other
+    FraudLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          readOnly: true
+        transaction_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        payment_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        card_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        masked_card_number:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rules:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        device_id:
+          type: string
+          nullable: true
+          maxLength: 100
+        location_id:
+          type: string
+          nullable: true
+          maxLength: 100
+        alert_sent:
+          type: boolean
+        review_status:
+          $ref: '#/components/schemas/ReviewStatusEnum'
+        reviewed_by_username:
+          type: string
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        review_notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - card_id
+      - created_at
+      - email
+      - id
+      - masked_card_number
+      - payment_id
+      - reviewed_by_username
+      - rules
+      - transaction_id
+      - user_id
+      - username
+    FraudStatusEnum:
+      enum:
+      - CLEAR
+      - FLAGGED
+      type: string
+      description: |-
+        * `CLEAR` - Clear
+        * `FLAGGED` - Flagged
+    PaginatedFraudLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FraudLog'
+    PaginatedTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
     Register:
       type: object
       properties:
@@ -438,6 +893,16 @@ components:
       - email
       - password
       - username
+    ReviewStatusEnum:
+      enum:
+      - OPEN
+      - CONFIRMED_FRAUD
+      - FALSE_POSITIVE
+      type: string
+      description: |-
+        * `OPEN` - Open
+        * `CONFIRMED_FRAUD` - Confirmed Fraud
+        * `FALSE_POSITIVE` - False Positive
     StatusEnum:
       enum:
       - PENDING
@@ -488,12 +953,14 @@ components:
           readOnly: true
         payment_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
         card_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
         amount:
           type: string
           format: decimal
@@ -503,6 +970,12 @@ components:
           maxLength: 3
         status:
           $ref: '#/components/schemas/StatusEnum'
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        fraud_status:
+          allOf:
+          - $ref: '#/components/schemas/FraudStatusEnum'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -511,6 +984,7 @@ components:
       - amount
       - card_id
       - created_at
+      - fraud_status
       - id
       - payment_id
       - status

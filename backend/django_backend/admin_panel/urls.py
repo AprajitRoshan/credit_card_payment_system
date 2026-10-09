@@ -1,5 +1,7 @@
 from django.urls import path
 
+from monitoring.views import SystemHealthView
+
 from .views import (
     AdminDashboardView,
     AdminTransactionExportView,
@@ -30,5 +32,11 @@ urlpatterns = [
         "cards/<int:card_id>/",
         AdminCardManagementView.as_view(),
         name="admin-card-management",
+    ),
+
+    path(
+        "system-health/",
+        SystemHealthView.as_view(),
+        name="admin-system-health",
     ),
 ]
